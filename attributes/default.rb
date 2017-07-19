@@ -91,6 +91,7 @@ default['nginx']['log_dir'] = '/var/log/nginx'
 default['nginx']['proxy_read_timeout'] = '60'
 default['nginx']['proxy_send_timeout'] = '60'
 default['nginx']['send_timeout'] = '10'
+default['nginx']['enable_upgrade_method'] = false
 
 # framework
 ## common
@@ -101,10 +102,10 @@ default['defaults']['framework']['adapter'] = 'rails'
 
 default['defaults']['framework']['migrate'] = true
 default['defaults']['framework']['migration_command'] =
-  'if /usr/local/bin/bundle exec rake db:version > /dev/null 2>&1; ' \
-  'then /usr/local/bin/bundle exec rake db:migrate; ' \
-  'else /usr/local/bin/bundle exec rake db:setup; ' \
-  'fi'
+  'case $(/usr/local/bin/bundle exec rake db:version 2>&1) in ' \
+  '*"ActiveRecord::NoDatabaseError"*) /usr/local/bin/bundle exec rake db:setup;; ' \
+  '*) /usr/local/bin/bundle exec rake db:migrate;; ' \
+  'esac'
 default['defaults']['framework']['assets_precompile'] = true
 default['defaults']['framework']['assets_precompilation_command'] = '/usr/local/bin/bundle exec rake assets:precompile'
 default['defaults']['framework']['envs_in_console'] = false

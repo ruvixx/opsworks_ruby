@@ -78,6 +78,8 @@ describe 'opsworks_ruby::configure' do
     describe file('/srv/www/dummy_project/shared/scripts/puma.service') do
       its(:content) { should include 'ENV[\'ENV_VAR1\'] = "test"' }
       its(:content) { should include 'ENV[\'RAILS_ENV\'] = "production"' }
+      its(:content) { should include 'ENV[\'HOME\'] = "/home/deploy"' }
+      its(:content) { should include 'ENV[\'USER\'] = "deploy"' }
       its(:content) { should include 'PID_PATH="/srv/www/dummy_project/shared/pids/puma.pid"' }
       its(:content) { should include 'def puma_running?' }
     end
@@ -85,7 +87,7 @@ describe 'opsworks_ruby::configure' do
 
   context 'framework' do
     describe file('/etc/logrotate.d/dummy_project-rails-production') do
-      its(:content) { should include '"/srv/www/dummy_project/shared/log/production.log" {' }
+      its(:content) { should include '"/srv/www/dummy_project/shared/log/*.log" {' }
       its(:content) { should include '  daily' }
       its(:content) { should include '  rotate 30' }
       its(:content) { should include '  missingok' }
