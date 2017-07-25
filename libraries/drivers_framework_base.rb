@@ -1,12 +1,18 @@
 # frozen_string_literal: true
+
 module Drivers
   module Framework
     class Base < Drivers::Base
+      include Drivers::Dsl::Logrotate
       include Drivers::Dsl::Output
       include Drivers::Dsl::Packages
 
       def setup
         handle_packages
+      end
+
+      def configure
+        configure_logrotate
       end
 
       def deploy_before_migrate
