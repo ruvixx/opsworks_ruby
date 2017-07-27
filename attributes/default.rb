@@ -19,7 +19,7 @@ default['defaults']['global']['symlinks'] = {
   'log' => 'log'
 }
 default['defaults']['global']['create_dirs_before_symlink'] =
-  %w[tmp public config ../../shared/cache ../../shared/assets]
+  %w[tmp public config ../../shared/cache]
 default['defaults']['global']['purge_before_symlink'] = %w[log tmp/pids public/system]
 default['defaults']['global']['rollback_on_error'] = true
 default['defaults']['global']['logrotate_rotate'] = 30

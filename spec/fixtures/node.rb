@@ -74,7 +74,7 @@ def node(override = {})
           pids: 'tmp/pids',
           log: 'log'
         },
-        create_dirs_before_symlink: %w[tmp public config ../../shared/cache ../../shared/assets],
+        create_dirs_before_symlink: %w[tmp public config ../../shared/cache],
         purge_before_symlink: %w[log tmp/cache tmp/pids public/system public/assets]
       },
       scm: {

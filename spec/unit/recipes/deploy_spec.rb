@@ -94,7 +94,7 @@ describe 'opsworks_ruby::deploy' do
           'log' => 'log',
           'test' => 'public/test'
         },
-        'create_dirs_before_symlink' => %w[tmp public config ../../shared/cache ../../shared/assets ../shared/test],
+        'create_dirs_before_symlink' => %w[tmp public config ../../shared/cache ../shared/test],
         'purge_before_symlink' => %w[log tmp/cache tmp/pids public/system public/assets public/test]
       )
 
