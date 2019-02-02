@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
-# ruby
+# deployer
+default['deployer']['user'] = 'deploy'
+default['deployer']['group'] = 'deploy'
+default['deployer']['home'] = "/home/#{default['deployer']['user']}"
 
+# ruby
 default['build-essential']['compile_time'] = true
-default['ruby-ng']['ruby_version'] = node['ruby'].try(:[], 'version') || '2.4'
+default['ruby-version'] = node['ruby'].try(:[], 'version') || '2.6'
 default['nginx']['source']['modules'] = %w[
   nginx::http_ssl_module nginx::http_realip_module nginx::http_gzip_static_module nginx::headers_more_module
   nginx::http_stub_status_module
@@ -23,16 +27,21 @@ default['defaults']['global']['create_dirs_before_symlink'] =
 default['defaults']['global']['purge_before_symlink'] = %w[log tmp/pids public/system]
 default['defaults']['global']['rollback_on_error'] = true
 default['defaults']['global']['logrotate_rotate'] = 30
+default['defaults']['global']['logrotate_frequency'] = 'daily'
+default['defaults']['global']['logrotate_options'] = %w[
+  missingok compress delaycompress notifempty copytruncate sharedscripts
+]
 
 # database
 ## common
 
 default['defaults']['database']['adapter'] = 'sqlite3'
 
-# scm
+# source
 ## common
 
-default['defaults']['scm']['remove_scm_files'] = true
+default['defaults']['source']['adapter'] = 'git'
+default['defaults']['source']['remove_scm_files'] = true
 
 # appserver
 ## common
@@ -43,12 +52,19 @@ default['defaults']['appserver']['dot_env'] = false
 default['defaults']['appserver']['preload_app'] = true
 default['defaults']['appserver']['timeout'] = 60
 default['defaults']['appserver']['worker_processes'] = 4
+default['defaults']['appserver']['after_deploy'] = 'stop-start' # (restart|clean-restart)
 
 ## puma
 
 default['defaults']['appserver']['log_requests'] = false
 default['defaults']['appserver']['thread_min'] = 0
 default['defaults']['appserver']['thread_max'] = 16
+default['defaults']['appserver']['on_restart'] = nil
+default['defaults']['appserver']['before_fork'] = nil
+default['defaults']['appserver']['on_worker_boot'] = nil
+default['defaults']['appserver']['on_worker_shutdown'] = nil
+default['defaults']['appserver']['on_worker_fork'] = nil
+default['defaults']['appserver']['after_worker_fork'] = nil
 
 ## thin
 
@@ -63,20 +79,30 @@ default['defaults']['appserver']['tcp_nodelay'] = true
 default['defaults']['appserver']['tcp_nopush'] = false
 default['defaults']['appserver']['tries'] = 5
 
+## passenger
+default['defaults']['appserver']['mount_point'] = '/'
+
 # webserver
 ## common
 
 default['defaults']['webserver']['adapter'] = 'nginx'
+default['defaults']['webserver']['port'] = 80
+default['defaults']['webserver']['ssl_port'] = 443
 default['defaults']['webserver']['ssl_for_legacy_browsers'] = false
 default['defaults']['webserver']['extra_config'] = ''
 default['defaults']['webserver']['extra_config_ssl'] = ''
 default['defaults']['webserver']['keepalive_timeout'] = '15'
 default['defaults']['webserver']['log_level'] = 'info'
+default['defaults']['webserver']['remove_default_sites'] = %w[
+  default default.conf 000-default 000-default.conf default-ssl default-ssl.conf
+]
+default['defaults']['webserver']['force_ssl'] = false
 
 ## apache2
 
 default['defaults']['webserver']['limit_request_body'] = '1048576'
 default['defaults']['webserver']['proxy_timeout'] = '60'
+default['defaults']['webserver']['use_apache2_ppa'] = (node['platform'] == 'ubuntu')
 
 ## nginx
 

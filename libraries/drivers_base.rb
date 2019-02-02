@@ -27,6 +27,14 @@ module Drivers
       options[:include_null] ? adapters : adapters - ['null']
     end
 
+    def self.driver_type
+      name.to_s.split('::')[1].downcase
+    end
+
+    def driver_type
+      self.class.driver_type
+    end
+
     # Dummy methods for children to redefine
     def setup; end
 
@@ -70,11 +78,13 @@ module Drivers
 
     def validate_app_engine
       return validate_node_engine if app_engine.blank?
+
       validate_engine(:app)
     end
 
     def validate_node_engine
       raise ArgumentError, "Missing :app or :node engine, expected #{allowed_engines.inspect}." if node_engine.blank?
+
       validate_engine(:node)
     end
 
@@ -84,6 +94,7 @@ module Drivers
       unless allowed_engines.include?(engine)
         raise ArgumentError, "Incorrect :#{type} engine, expected #{allowed_engines.inspect}, got '#{engine}'."
       end
+
       engine_name.to_sym
     end
 

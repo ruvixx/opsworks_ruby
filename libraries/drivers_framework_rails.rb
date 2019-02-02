@@ -9,12 +9,12 @@ module Drivers
         migrate migration_command deploy_environment assets_precompile assets_precompilation_command
         envs_in_console
       ]
-      packages debian: 'zlib1g-dev', rhel: 'zlib-devel'
+      packages debian: %w[libxml2-dev tzdata zlib1g-dev], rhel: %w[libxml2-devel tzdata zlib-devel]
       log_paths lambda { |context|
         File.join(context.send(:deploy_dir, context.app), 'shared', 'log', '*.log')
       }
 
-      def raw_out
+      def settings
         super.merge(deploy_environment: { 'RAILS_ENV' => deploy_env })
       end
 
@@ -33,10 +33,10 @@ module Drivers
 
       private
 
-      def database_yml(db)
-        return unless db.applicable_for_configuration?
+      def database_yml(db_driver)
+        return unless db_driver.applicable_for_configuration? && db_driver.can_migrate?
 
-        database = db.out
+        database = db_driver.out
         deploy_environment = deploy_env
 
         context.template File.join(deploy_dir(app), 'shared', 'config', 'database.yml') do
@@ -50,9 +50,11 @@ module Drivers
 
       def setup_rails_console
         return unless out[:envs_in_console]
+
         application_rb_path = File.join(deploy_dir(app), 'current', 'config', 'application.rb')
 
         return unless File.exist?(application_rb_path)
+
         env_code = "if(defined?(Rails::Console))\n  " +
                    environment.map { |key, value| "ENV['#{key}'] = #{value.inspect}" }.join("\n  ") +
                    "\nend\n"

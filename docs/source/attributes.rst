@@ -34,13 +34,36 @@ convention).
      of an application, not included in this list - it will be skipped, as this list
      takes precedence over anything else.
 
--  ``node['ruby-ng']['ruby_version']``
+-  ``node['ruby-version']``
 
   -  **Type:** string
-  -  **Default:** ``2.4``
-  -  Sets the Ruby version used through the system. See `ruby-ng cookbook documentation`_
-     for more details
+  -  **Default:** ``2.6``
+  -  Sets the Ruby version used through the system. For debian-based distributions,
+     a ``ruby-ng`` cookbook is used (check `ruby-ng cookbook documentation`_).
+     For Amazon Linux, packages provided by distribution (i.e. ``ruby23``,
+     ``ruby23-devel`` etc.).
+     **Important** please note, that some versions may be available on one system,
+     and not on the other (for example ``ruby-ng`` gets freshest versions of ruby
+     way earlier than Amazon Linux).
 
+Cross-application attributes
+----------------------------
+
+These attributes can only be set at the server level; they cannot vary from
+application to application.
+
+webserver
+~~~~~~~~~
+
+-  ``node['defaults']['webserver']['remove_default_sites']``
+
+  -  **Type:** array
+  -  **Default:** ``%w[default default.conf 000-default 000-default.conf default-ssl default-ssl.conf]``
+  -  **Note**: Only applies to Apache2 webserver
+  -  A list of "default site" filenames that should be removed (if they exist) from
+     ``/etc/{httpd,apache2}/sites-enabled`` in order to disable any "default site"
+     provided by the OS-provided Apache2 package. Set this to ``nil`` or an empty
+     array (``[]``) if you want the default site to be enabled.
 
 Application attributes
 ----------------------
@@ -57,6 +80,15 @@ Global parameters apply to the whole application, and can be used by any section
   -  **Default:** ``production``
   -  Sets the “deploy environment” for all the app-related (for example ``RAILS_ENV``
      in Rails) actions in the project (server, worker, etc.)
+
+-  ``app['global']['deploy_dir']``
+
+  -  **Type:** string
+  -  **Default:** ``/srv/www/app_name``
+  -  Determines where the application will be deployed.
+  -  Note that if you override this setting, you'll typically want to include the short_name
+     in the setting. In other words, this setting doesn't override the ``/srv/www`` base
+     directory defafult; it overrides the application-specific ``/srv/www/app_name`` default.
 
 - ``app['global']['symlinks']``
 
@@ -94,6 +126,34 @@ Global parameters apply to the whole application, and can be used by any section
   -  **Type:** integer
   -  **Default:** ``30``
   -  **Important Notice:** The parameter is in days
+  -  How many days of logfiles are kept.
+  -  See Logrotate Attributes for more information on logrotate attribute precedence.
+
+- ``app['global']['logrotate_frequency']``
+
+  -  **Type:** string
+  -  **Default:** ``daily``
+  -  **Supported values:** ``daily``, ``weekly``, ``monthly``, ``size X``
+  -  How often logrotate runs for the given log(s), either time-based or
+     when the log(s) reach a certain size.
+  -  See Logrotate Attributes for more information on logrotate attribute precedence.
+
+- ``app['global']['logrotate_options']``
+
+  -  **Type:** Array
+  -  **Default:** ``%w[missingok compress delaycompress notifempty copytruncate sharedscripts]``
+  -  All of the unqualified options (i.e., without arguments) that should be enabled
+     for the specified logrotate configuration.
+  -  See Logrotate Attributes for more information on logrotate attribute precedence.
+
+- ``app['global']['logrotate_X']``
+
+  -  **Type:** Varies
+  -  Any attribute value Y for ``logrotate_X`` will cause the [logrotate_app](https://github.com/stevendanna/logrotate/blob/master/resources/app.rb)
+     resource _X_ to be called with argument Y. For example setting ``logrotate_cookbook`` to ``'my_cookbook'``
+     will result in the ``logrotate_app`` resource being invoked with the resource value ``cookbook 'my_cookbook'``.
+  -  See Logrotate Attributes for more information on logrotate attribute precedence.
+
 
 database
 ~~~~~~~~
@@ -108,9 +168,12 @@ database
 
 -  ``app['database']['adapter']``
 
-  -  **Supported values:** ``mariadb``, ``mysql``, ``postgresql``, ``sqlite3``
+  -  **Supported values:** ``aurora``, ``aurora-postgresql``, ``mariadb``, ``mysql``, ``postgis``, ``postgresql``,
+     ``sqlite3``, ``null``
   -  **Default:** ``sqlite3``
-  -  ActiveRecord adapter which will be used for database connection.
+  -  ActiveRecord adapter which will be used for database connection. ``null`` means
+     that no database will be configured, and is currently only tested with the ``rails``
+     framework.
 
 -  ``app['database']['username']``
 
@@ -133,51 +196,91 @@ database
   -  Any other key-value pair provided here, will be passed directly to
      the ``database.yml``
 
-scm
-~~~
+source
+~~~~~~
 
 | Those parameters can also be determined from OpsWorks application, and
-  usually
-| you don’t need to provide them here. Currently only ``git`` is
-  supported.
+  usually you don’t need to provide them here.
 
--  ``app['scm']['scm_provider']``
+-  ``app['source']['adapter']``
 
-  -  **Supported values:** ``git``
+  -  **Supported values:** ``git``, ``http``, ``s3``
   -  **Default:** ``git``
-  -  SCM used by the cookbook to clone the repo.
+  -  Source used by the cookbook to fetch the application codebase.
 
--  ``app['scm']['remove_scm_files']``
+-  ``app['source']['url']``
+
+  -  Source code URL (repository URL for SCMs).
+
+git
+^^^
+
+-  ``app['source']['remove_scm_files']``
 
   -  **Supported values:** ``true``, ``false``
   -  **Default:** ``true``
   -  If set to true, all SCM leftovers (like ``.git``) will be removed.
 
--  ``app['scm']['repository']``
-
-  -  Repository URL
-
--  ``app['scm']['revision']``
+-  ``app['source']['revision']``
 
   -  Branch name/SHA1 of commit which should be use as a base of the
      deployment.
 
--  ``app['scm']['ssh_key']``
+-  ``app['source']['ssh_key']``
 
   -  A private SSH deploy key (the key itself, not the file name), used
      when fetching repositories via SSH.
 
--  ``app['scm']['ssh_wrapper']``
+-  ``app['source']['ssh_wrapper']``
 
   -  A wrapper script, which will be used by git when fetching repository
      via SSH. Essentially, a value of ``GIT_SSH`` environment variable.
      This cookbook provides one of those scripts for you, so you shouldn’t
      alter this variable unless you know what you’re doing.
 
--  ``app['scm']['enabled_submodules']``
+-  ``app['source']['generated_ssh_wrapper']``
+
+  -  **Default:** ``/tmp/ssh-git-wrapper.sh``
+  -  If the cookbook generates an SSH wrapper for you, this is where it
+     will generate it. For users whose /tmp partitions are mounted ``noexec``
+     (a good security practice to prevent code injection exploits), this
+     attribute allows you to override that location to a partition where
+     execution of the generated shell script is allowed.
+
+-  ``app['source']['enable_submodules']``
 
   -  If set to ``true``, any submodules included in the repository, will
      also be fetched.
+
+s3
+^^
+
+| This source expects a packed project in one of the following formats:
+| ``bzip2``, ``compress``, ``gzip``, ``tar``, ``xz`` or ``zip``.
+| If you are using ubuntu, ``7zip`` is also supported.
+
+-  ``app['source']['user']``
+
+  -  ``AWS_ACCESS_KEY_ID`` with read access to the bucket.
+
+-  ``app['source']['password']``
+
+  -  ``AWS_SECRET_ACCESS_KEY`` for given ``AWS_ACCESS_KEY_ID``.
+
+http
+^^^^
+
+| This source expects a packed project in one of the following formats:
+| ``bzip2``, ``compress``, ``gzip``, ``tar``, ``xz`` or ``zip``.
+| If you are using ubuntu, ``7zip`` is also supported.
+
+-  ``app['source']['user']``
+
+  -  If file is hidden behind HTTP BASIC AUTH, this field should contain username.
+
+-  ``app['source']['password']``
+
+  -  If file is hidden behind HTTP BASIC AUTH, this field should contain password.
 
 framework
 ~~~~~~~~~
@@ -211,6 +314,26 @@ framework
 -  ``app['framework']['assets_precompilation_command']``
 
   -  A command which will be invoked to precompile assets.
+
+-  ``app['framework']['logrotate_name']``
+
+  -  **Type:** string
+  -  **Default:** Depends on adapter-specific behaviors
+  -  The name of the logrotate_app resource, and generated configuration file,
+     for the specified app framework logrotate configuration.
+  -  Unlike other logrotate attributes, this attribute can only be set or overridden
+     at a the app framework level; there are no app-wide or global settings beyond
+     those provided by the framework library
+
+- ``app['framework']['logrotate_log_paths']``
+
+  -  **Type:** Array
+  -  **Default:** Depends on adapter-specific behaviors
+  -  Which log file(s) should be backed up via logrotate. If this parameter evaluates
+     to an empty array, no logs will be backed up for the specified app framework.
+  -  Unlike other logrotate attributes, this attribute can only be set or overridden
+     at a the app framework level; there are no app-wide or global settings beyond
+     those provided by the framework library.
 
 padrino
 ^^^^^^^
@@ -246,12 +369,12 @@ appserver
 ~~~~~~~~~
 
 | Configuration parameters for the ruby application server. Currently ``Puma``,
-| ``Thin`` and ``Unicorn`` are supported.
+| ``Thin``, ``Unicorn``, and ``Passenger``  are supported.
 
 -  ``app['appserver']['adapter']``
 
   -  **Default:** ``puma``
-  -  **Supported values:** ``puma``, ``thin``, ``unicorn``, ``null``
+  -  **Supported values:** ``puma``, ``thin``, ``unicorn``, ``passenger``, ``null``
   -  Server on the application side, which will receive requests from
      webserver in front. ``null`` means no appserver enabled.
 
@@ -285,6 +408,36 @@ appserver
   -  **Default:** ``4``
   -  Sets the current number of worker processes. Each worker process will
      serve exactly one client at a time.
+
+-  ``app['appserver']['passenger_version']``
+
+  -  **Default:** None
+  -  Which Debian APT package version should be installed from the PPA
+     repo provided by Passenger. Currently this defaults to the latest
+     version provided by the Passenger APT PPA. Set this to a non-nil
+     value to lock your Passenger installation at a specific version.
+
+- ``app['appserver']['after_deploy']``
+
+  - **Default:** ``stop-start``
+  - **Supported values:** ``stop-start``, ``restart``, ``clean-restart``
+  - Tell the appserver how to restart following a deployment.  A ``stop-start``
+    will instruct the appserver to stop and then start immediately.  This is
+    can cause requests from the webserver to be dropped since it closes the socket.
+    A ``restart`` sends a signal to the appserver instructing it to restart while
+    maintaining the open socket.  Requests will hang while the app boots, but
+    will not be lost. A ``clean-restart`` will perform a ``stop-start`` if the
+    Gemfile has changed or a ``restart`` otherwise.  The behavior of each of
+    these approaches varies between appservers.  See their documentation for more
+    details.
+
+- ``app['appserver']['port']``
+
+  - **Default:** None
+  - Bind the appserver to a port on 0.0.0.0.  This is
+    useful for serving the application directly from the appserver without a web
+    server middleware or separating the web server into its own container or server.
+
 
 unicorn
 ^^^^^^^
@@ -327,6 +480,30 @@ puma
 
   -  **Default:** ``0``
 
+-  |app['appserver']['on_restart']|_
+
+  - Code to run before doing a restart. This code should close log files, database connections, etc.
+
+-  |app['appserver']['before_fork']|_
+
+  - Code to run immediately before the master starts workers.
+
+-  |app['appserver']['on_worker_boot']|_
+
+  - Code to run in a worker before it starts serving requests. This is called everytime a worker is to be started.
+
+-  |app['appserver']['on_worker_shutdown']|_
+
+  - Code to run in a worker right before it exits. This is called everytime a worker is to about to shutdown.
+
+-  |app['appserver']['on_worker_fork']|_
+
+  - Code to run in the master right before a worker is started. The worker's index is passed as an argument. This is called everytime a worker is to be started.
+
+-  |app['appserver']['after_worker_fork']|_
+
+  - Code to run in the master after a worker has been started. The worker's index is passed as an argument. This is called everytime a worker is to be started.
+
 thin
 ^^^^
 
@@ -346,6 +523,29 @@ thin
 
   -  **Default:** ``4``
 
+passenger
+^^^^^^^^^
+
+-  ``app['appserver']['max_pool_size']``
+
+  -  **Type:** Integer
+  -  **Default:** Passenger-provided default (based on server capacity)
+  -  Sets the ``PassengerMaxPoolSize`` parameter
+
+-  ``app['appserver']['min_instances']``
+
+  -  **Type:** Integer
+  -  **Default:** Passenger-provided default (based on server capacity)
+  -  Sets the ``PassengerMinInstances`` parameter
+
+-  ``app['appserver']['mount_point']``
+
+  -  **Default:** ``/``
+  - Which URL path should be handled by Passenger. This option allows
+    you to configure your application to handle only a subset of requests
+    made to your web server. Useful for certain hybrid static/dynamic
+    web sites.
+
 webserver
 ~~~~~~~~~
 
@@ -356,9 +556,9 @@ webserver
 
   -  **Default:** ``nginx``
   -  **Supported values:** ``apache2``, ``nginx``, ``null``
-  -  Webserver in front of the instance. It runs on port 80,
-     and receives all requests from Load Balancer/Internet.
-     ``null`` means no webserver enabled.
+  -  Webserver in front of the instance. It runs on port 80 by default
+     (see ``app['webserver']['port']``), and receives all requests from the
+     Load Balancer/Internet. ``null`` means no webserver enabled.
 
 -  ``app['webserver']['dhparams']``
 
@@ -381,19 +581,82 @@ webserver
      Android < 2.2) wouldn’t work with this configuration very well. If your
      application needs a support for those browsers, set this parameter to ``true``.
 
+-  ``app['webserver']['port']``
+
+  -  **Default** ``80``
+  -  The port on which the webserver should listen for HTTP requests.
+
+-  ``app['webserver']['ssl_port']``
+
+  -  **Default** ``443``
+  -  The port on which the webserver should listen for HTTPs requests, if
+     SSL requests are enabled. Note that SSL itself is controlled by the
+     ``app['enable_ssl']`` setting in Opsworks.
+
+-  ``app['webserver']['force_ssl']``
+
+  -  **Supported values:** ``true``, ``false``
+  -  **Default** ``false``
+  -  When this parameter is set to ``true`` all requests passed to http will
+     be redirected to https, with 301 status code. This works only when SSL
+     in OpsWorks panel is enabled, otherwise it's ommited.
+
+-  ``app['webserver']['site_config_template']``
+
+  -  **Default** ``appserver.apache2.conf.erb`` or ``appserver.nginx.conf.erb``
+  -  The name of the cookbook template that should be used to generate per-app
+     configuration stanzas (known as a "site" in apache and nginx configuration
+     parlance). Useful in situations where inserting an ``extra_config`` text
+     section doesn't provide enough flexibility to customize your per-app
+     webserver configuration stanza to your liking.
+  -  Note that when you use a custom site configuration template, you can
+     also choose to define ``extra_config`` as any data structure (e.g., Hash
+     or even nested Hash) to be interpreted by your custom template. This
+     provides somewhat unlimited flexibility to configure the webserver app
+     configuration however you see fit.
+
+-  ``app['webserver']['site_config_template_cookbook']``
+
+  -  **Default** ``opsworks_ruby``
+  -  The name of the cookbook in which the site configuration template can be
+     found. If you override ``app['webserver']['site_config_template']`` to
+     use a site configuration template from your own cookbook, you'll need to
+     override this setting as well to ensure that the opsworks_ruby cookbook
+     looks for the specified template in your cookbook.
+
+-  ``app['webserver']['logrotate_name']``
+
+  -  **Type:** string
+  -  **Default:** Depends on adapter-specific behaviors
+  -  The name of the logrotate_app resource, and generated configuration file,
+     for the specified app webserver logrotate configuration.
+  -  Unlike other logrotate attributes, this attribute can only be set or overridden
+     at a the app webserver level; there are no app-wide or global settings beyond
+     those provided by the webserver library
+
+- ``app['webserver']['logrotate_log_paths']``
+
+  -  **Type:** Array
+  -  **Default:** Depends on adapter-specific behaviors
+  -  Which log file(s) should be backed up via logrotate. If this parameter evaluates
+     to an empty array, no logs will be backed up for the specified app webserver.
+  -  Unlike other logrotate attributes, this attribute can only be set or overridden
+     at a the app webserver level; there are no app-wide or global settings beyond
+     those provided by the webserver library
+
 apache
 ^^^^^^
 
 -  ``app['webserver']['extra_config']``
 
   -  Raw Apache2 configuration, which will be inserted into ``<Virtualhost *:80>``
-     section of the application.
+     (or other port, if specified) section of the application.
 
 -  ``app['webserver']['extra_config_ssl']``
 
   -  Raw Apache2 configuration, which will be inserted into ``<Virtualhost *:443>``
-     section of the application. If set to ``true``, the ``extra_config``
-     will be copied.
+     (or other port, if specified for SSL) section of the application. If set to
+     ``true``, the ``extra_config`` will be copied.
 
 -  |app['webserver']['limit_request_body']|_
 
@@ -419,7 +682,7 @@ nginx
 
   -  **Supported values:** ``default`` or ``source``
   -  **Default:** ``default``
-  -  The way the `chef_nginx`_ cookbook handles ``nginx`` installation.
+  -  The way the `nginx`_ cookbook handles ``nginx`` installation.
      Check out `the corresponding docs`_ for more details. Never use
      ``node['nginx']['install_method']``, as it will be always overwritten
      by this attribute.
@@ -464,13 +727,13 @@ nginx
 
   -  **Default**: ``10``
 
--  |app['webserver']['enable_upgrade_method']|_
+-  ``app['webserver']['enable_upgrade_method']``
 
   -  **Supported values:** ``true``, ``false``
   -  **Default**: ``false``
   -  When set to true, enable Websocket's upgrade method such as Rails actionCable.
 
-| Since this driver is basically a wrapper for `chef_nginx cookbook`_,
+| Since this driver is basically a wrapper for `nginx cookbook`_,
 | you can also configure `node['nginx'] attributes`_
 | as well (notice that ``node['deploy'][<application_shortname>]`` logic
 | doesn't apply here.)
@@ -507,6 +770,32 @@ resque
   -  **Default:** ``*``
   -  Array of queues which should be processed by resque
 
+shoryuken
+^^^^^^^^^
+
+- ``app['worker']['config']``
+
+  -  Configuration parameters which will be directly passed to the worker.
+     For example, for ``shoryuken`` they will be serialized to the relevant
+     `shoryuken.yml config file`_.
+
+- ``app['worker']['process_count']``
+
+  - **Default:** ``1``
+  - Number of shoryuken runner daemons to start. Shoryuken is multithreaded, so defaults to 1.
+
+- ``app['worker']['require']``
+
+  - Path to require, relative to the currently deployed application directory.
+
+- ``app['worker']['require_rails']``
+
+  - Boolean: emits ``-R`` to require the rails environment on boot.
+
+- ``app['worker']['syslog']``
+
+  - Boolean: configures piping shoryuken runner log output to syslog via ``logger``
+
 .. _ruby-ng cookbook documentation: https://supermarket.chef.io/cookbooks/ruby-ng
 .. _figaro: https://github.com/laserlemon/figaro
 .. _dotenv: https://github.com/bkeepers/dotenv
@@ -526,6 +815,18 @@ resque
 .. _app['appserver']['thread_max']: https://github.com/puma/puma/blob/c169853ff233dd3b5c4e8ed17e84e1a6d8cb565c/examples/config.rb#L62
 .. |app['appserver']['thread_min']| replace:: ``app['appserver']['thread_min']``
 .. _app['appserver']['thread_min']: https://github.com/puma/puma/blob/c169853ff233dd3b5c4e8ed17e84e1a6d8cb565c/examples/config.rb#L62
+.. |app['appserver']['on_restart']| replace:: ``app['appserver']['on_restart']``
+.. _app['appserver']['on_restart']: https://github.com/puma/puma/blob/e4255d03fb57021c96f7d03a3784b21b6e85b35b/examples/config.rb#L90
+.. |app['appserver']['before_fork']| replace:: ``app['appserver']['before_fork']``
+.. _app['appserver']['before_fork']: https://github.com/puma/puma/blob/e4255d03fb57021c96f7d03a3784b21b6e85b35b/examples/config.rb#L116
+.. |app['appserver']['on_worker_boot']| replace:: ``app['appserver']['on_worker_boot']``
+.. _app['appserver']['on_worker_boot']: https://github.com/puma/puma/blob/e4255d03fb57021c96f7d03a3784b21b6e85b35b/examples/config.rb#L124
+.. |app['appserver']['on_worker_shutdown']| replace:: ``app['appserver']['on_worker_shutdown']``
+.. _app['appserver']['on_worker_shutdown']: https://github.com/puma/puma/blob/e4255d03fb57021c96f7d03a3784b21b6e85b35b/examples/config.rb#L132
+.. |app['appserver']['on_worker_fork']| replace:: ``app['appserver']['on_worker_fork']``
+.. _app['appserver']['on_worker_fork']: https://github.com/puma/puma/blob/e4255d03fb57021c96f7d03a3784b21b6e85b35b/examples/config.rb#L141
+.. |app['appserver']['after_worker_fork']| replace:: ``app['appserver']['after_worker_fork']``
+.. _app['appserver']['after_worker_fork']: https://github.com/puma/puma/blob/e4255d03fb57021c96f7d03a3784b21b6e85b35b/examples/config.rb#L150
 .. _Read more here.: https://weakdh.org/sysadmin.html
 .. _covered in this article: https://cipherli.st/
 .. |app['webserver']['limit_request_body']| replace:: ``app['webserver']['limit_request_body']``
@@ -534,8 +835,8 @@ resque
 .. _app['webserver']['log_level']: https://httpd.apache.org/docs/2.4/mod/core.html#loglevel
 .. |app['webserver']['proxy_timeout']| replace:: ``app['webserver']['proxy_timeout']``
 .. _app['webserver']['proxy_timeout']: https://httpd.apache.org/docs/current/mod/mod_proxy.html#proxytimeout
-.. _chef_nginx: https://supermarket.chef.io/cookbooks/chef_nginx
-.. _the corresponding docs: https://github.com/miketheman/nginx/tree/2.7.x#recipes
+.. _nginx: https://supermarket.chef.io/cookbooks/nginx
+.. _the corresponding docs: https://github.com/chef-cookbooks/nginx#attributes
 .. |app['webserver']['client_body_timeout']| replace:: ``app['webserver']['client_body_timeout']``
 .. _app['webserver']['client_body_timeout']: http://nginx.org/en/docs/http/ngx_http_core_module.html#client_body_timeout
 .. |app['webserver']['client_header_timeout']| replace:: ``app['webserver']['client_header_timeout']``
@@ -548,9 +849,27 @@ resque
 .. _app['webserver']['proxy_send_timeout']: http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_send_timeout
 .. |app['webserver']['send_timeout']| replace:: ``app['webserver']['send_timeout']``
 .. _app['webserver']['send_timeout']: http://nginx.org/en/docs/http/ngx_http_core_module.html#send_timeout
-.. _chef_nginx cookbook: https://github.com/chef-cookbooks/chef_nginx
+.. _nginx cookbook: https://github.com/chef-cookbooks/nginx
 .. |node['nginx'] attributes| replace:: ``node['nginx']`` attributes
 .. _node['nginx'] attributes: https://github.com/miketheman/nginx/tree/2.7.x#attributes
 .. |sidekiq.yml config file| replace:: ``sidekiq.yml`` config file
 .. _sidekiq.yml config file: https://github.com/mperham/sidekiq/wiki/Advanced-Options#the-sidekiq-configuration-file
+.. |shoryuken.yml config file| replace:: ``shoryuken.yml`` config file
+.. _shoryuken.yml config file: https://github.com/phstc/shoryuken/wiki/Shoryuken-options
 
+Logrotate Attributes
+----------------------
+
+Logrotate behaviors occur across multiple drivers, for example webserver and
+framework. For this reason, the evaluation order for attribute-driven behaviors
+is a bit more complex for logrotate than for other options that are either
+entirely global (for example, ``global.environment``) or entirely isolated to a
+single type of driver (``webserver.keepalive_timeout``).
+
+The evaluation rules for logrotate setting _X_ are as follows, from highest
+priority to lowest priority:
+
+- ``app[driver_type]['logrotate_X']``
+- ``app['global']['logrotate_X']``
+- ``node['defaults'][driver_type]['logrotate_X']``
+- ``node['defaults']['global']['logrotate_X']``

@@ -1,3 +1,194 @@
+# [1.13.0](https://github.com/ajgon/opsworks_ruby/compare/v1.12.0...v1.13.0) (2018-11-09)
+
+
+### Bug Fixes
+
+* **db:** Fix typo for aurora postgresql ([1bb2fb5](https://github.com/ajgon/opsworks_ruby/commit/1bb2fb5))
+
+
+### Features
+
+* **worker:** Support Shoryuken worker library ([5359679](https://github.com/ajgon/opsworks_ruby/commit/5359679))
+
+
+
+<a name="1.12.0"></a>
+# [1.12.0](https://github.com/ajgon/opsworks_ruby/compare/v1.11.0...v1.12.0) (2018-10-03)
+
+
+### Features
+
+* **appserver:** add port configuration ([6540201](https://github.com/ajgon/opsworks_ruby/commit/6540201))
+* **database:** added aurora-postgres as an accepted engine for Postgres RDS ([626a11d](https://github.com/ajgon/opsworks_ruby/commit/626a11d))
+* **webserver:** add support for `force_ssl` attribute ([2281047](https://github.com/ajgon/opsworks_ruby/commit/2281047)), closes [#189](https://github.com/ajgon/opsworks_ruby/issues/189)
+
+
+
+<a name="1.11.0"></a>
+# [1.11.0](https://github.com/ajgon/opsworks_ruby/compare/v1.10.1...v1.11.0) (2018-07-17)
+
+
+### Bug Fixes
+
+* add Apache 2.4's "Require all granted" to apache2+passenger config file ([#171](https://github.com/ajgon/opsworks_ruby/issues/171)) ([f4e5871](https://github.com/ajgon/opsworks_ruby/commit/f4e5871))
+* **webserver:** add `X-Content-Type-Options: nosniff` to assets served by rails for extra security ([07d3336](https://github.com/ajgon/opsworks_ruby/commit/07d3336))
+
+
+### Features
+
+* **webserver:** hardened security headers, disabled tls1.0 and tls1.1 for non-legacy SSL config ([8351d58](https://github.com/ajgon/opsworks_ruby/commit/8351d58))
+
+
+### BREAKING CHANGES
+
+* **webserver:** If you are using SSL in your project, TLSv1.0 and
+TLSv1.1 has been disabled for all responses - only TLSv1.2 is served. If
+you still need older ciphers, consider using
+`app['webserver']['ssl_for_legacy_browsers']` configuration option.
+
+
+
+<a name="1.10.1"></a>
+## [1.10.1](https://github.com/ajgon/opsworks_ruby/compare/v1.10.0...v1.10.1) (2018-06-24)
+
+
+### Bug Fixes
+
+* do not read pidfile at each stop retry (prevent from early pidfile deletion) ([c5f0fe4](https://github.com/ajgon/opsworks_ruby/commit/c5f0fe4)), closes [#163](https://github.com/ajgon/opsworks_ruby/issues/163)
+* **framework:** added environment variables context to bundle install ([fe01d45](https://github.com/ajgon/opsworks_ruby/commit/fe01d45)), closes [#167](https://github.com/ajgon/opsworks_ruby/issues/167)
+
+
+### Features
+
+* **appserver:** support rails restart command on puma. ([bb04fb4](https://github.com/ajgon/opsworks_ruby/commit/bb04fb4))
+* **db:** added postgis driver ([6b3c058](https://github.com/ajgon/opsworks_ruby/commit/6b3c058)), closes [#165](https://github.com/ajgon/opsworks_ruby/issues/165)
+
+
+
+<a name="1.10.0"></a>
+# [1.10.0](https://github.com/ajgon/opsworks_ruby/compare/v1.9.1...v1.10.0) (2018-06-10)
+
+
+### Bug Fixes
+
+* **appserver:** moved env files creation to `before_symlink` phase ([2ed059d](https://github.com/ajgon/opsworks_ruby/commit/2ed059d)), closes [#157](https://github.com/ajgon/opsworks_ruby/issues/157)
+* **setup:** Fixed `deployer` user setup ([9af3651](https://github.com/ajgon/opsworks_ruby/commit/9af3651)), closes [#159](https://github.com/ajgon/opsworks_ruby/issues/159)
+
+
+### Features
+
+* **appserver:** add additional puma configuration options ([f994e2f](https://github.com/ajgon/opsworks_ruby/commit/f994e2f))
+* **ruby:** introduced new `ruby-version` JSON parameter. ([99798ce](https://github.com/ajgon/opsworks_ruby/commit/99798ce)), closes [#156](https://github.com/ajgon/opsworks_ruby/issues/156)
+
+
+### BREAKING CHANGES
+
+* **ruby:** If you were using `ruby-ng.ruby_version` JSON
+configuration parameter in your stack/layer configuration, please change
+it to `ruby-version`. Since `ruby-version` is set by default to the
+freshest version of ruby available, you may end up with unexpected
+upgrade of ruby on your system.
+
+
+
+<a name="1.9.1"></a>
+## [1.9.1](https://github.com/ajgon/opsworks_ruby/compare/v1.9.0...v1.9.1) (2018-05-22)
+
+
+### Bug Fixes
+
+* **chef:** Downgraded apt cookbook below version 7 ([8ea8eee](https://github.com/ajgon/opsworks_ruby/commit/8ea8eee)), closes [#151](https://github.com/ajgon/opsworks_ruby/issues/151)
+* **chef:** Removed broken `deployer` cookbook ([51a4942](https://github.com/ajgon/opsworks_ruby/commit/51a4942)), closes [#155](https://github.com/ajgon/opsworks_ruby/issues/155)
+
+
+
+<a name="1.9.0"></a>
+# [1.9.0](https://github.com/ajgon/opsworks_ruby/compare/v1.8.0...v1.9.0) (2018-03-17)
+
+
+### Bug Fixes
+
+* **appserver:** Wait up to 10 sec for graceful shutdown ([def1c21](https://github.com/ajgon/opsworks_ruby/commit/def1c21)), closes [#127](https://github.com/ajgon/opsworks_ruby/issues/127)
+* **configure:** Don't create pids symlink if it already exists ([4671ac9](https://github.com/ajgon/opsworks_ruby/commit/4671ac9)), closes [#126](https://github.com/ajgon/opsworks_ruby/issues/126)
+* **appserver:** failed to start appserver. ([#146](https://github.com/ajgon/opsworks_ruby/issues/146)) ([4505890](https://github.com/ajgon/opsworks_ruby/commit/4505890))
+* **source:** remove temporary directories after deploy ([b92417f](https://github.com/ajgon/opsworks_ruby/commit/b92417f))
+* **source:** Subdirectories on S3 are now properly handled ([9373173](https://github.com/ajgon/opsworks_ruby/commit/9373173))
+* **webserver:** Switched `chef_nginx` back to `nginx` cookbook ([683f840](https://github.com/ajgon/opsworks_ruby/commit/683f840)), closes [#148](https://github.com/ajgon/opsworks_ruby/issues/148)
+
+
+### Features
+
+* **ruby:** Added support for ruby 2.5 ([2fd887a](https://github.com/ajgon/opsworks_ruby/commit/2fd887a))
+* **source:** Added support for HTTP ([34829f2](https://github.com/ajgon/opsworks_ruby/commit/34829f2))
+* **source:** Added support for S3 ([019c0ad](https://github.com/ajgon/opsworks_ruby/commit/019c0ad)), closes [#133](https://github.com/ajgon/opsworks_ruby/issues/133)
+
+
+### BREAKING CHANGES
+
+* **source:** `app['scm']` has been renamed to `app['source']`. This
+only affects the Custom JSON files, so if you were using this block
+there, you should change it. If you were using OpsWorks git configurator
+(which is probably 99.99% true), this change wouldn't affect you.
+
+
+
+<a name="1.8.0"></a>
+# [1.8.0](https://github.com/ajgon/opsworks_ruby/compare/v1.7.1...v1.8.0) (2017-10-23)
+
+
+### Bug Fixes
+
+* moved all pid-related files from shared/pids to /run/lock ([bc9daf0](https://github.com/ajgon/opsworks_ruby/commit/bc9daf0)), closes [#92](https://github.com/ajgon/opsworks_ruby/issues/92)
+* **db:** Respect database port provided by RDS ([#124](https://github.com/ajgon/opsworks_ruby/issues/124)) ([7aeb78e](https://github.com/ajgon/opsworks_ruby/commit/7aeb78e)), closes [#123](https://github.com/ajgon/opsworks_ruby/issues/123)
+* **logrotate:** remove duplicate log entry in config file generated from webserver service install ([eabf207](https://github.com/ajgon/opsworks_ruby/commit/eabf207))
+* **worker:** quiet_sidekiq now uses sidekiqctl instead of kill -USR1 which is deprectaed ([1e9e32b](https://github.com/ajgon/opsworks_ruby/commit/1e9e32b)), closes [#93](https://github.com/ajgon/opsworks_ruby/issues/93)
+
+
+### Features
+
+* **scm:** Support configurable location of git_ssh_wrapper ([#121](https://github.com/ajgon/opsworks_ruby/issues/121)) ([de153bf](https://github.com/ajgon/opsworks_ruby/commit/de153bf)), closes [#120](https://github.com/ajgon/opsworks_ruby/issues/120)
+
+
+
+<a name="1.7.1"></a>
+## [1.7.1](https://github.com/ajgon/opsworks_ruby/compare/v1.7.0...v1.7.1) (2017-09-22)
+
+
+### Bug Fixes
+
+* **webserver:** do not unnecessarily restart webserver ([db15b26](https://github.com/ajgon/opsworks_ruby/commit/db15b26)), closes [#114](https://github.com/ajgon/opsworks_ruby/issues/114)
+* **webserver:** Only remove default enabled sites ([ef085a0](https://github.com/ajgon/opsworks_ruby/commit/ef085a0)), closes [#111](https://github.com/ajgon/opsworks_ruby/issues/111)
+
+
+### Features
+
+* **webserver:** remove version info on Apache/Nginx ([6aba9f3](https://github.com/ajgon/opsworks_ruby/commit/6aba9f3))
+
+
+
+<a name="1.7.0"></a>
+# [1.7.0](https://github.com/ajgon/opsworks_ruby/compare/v1.6.0...v1.7.0) (2017-09-05)
+
+
+### Bug Fixes
+
+* **appserver:** passing USER and HOME environment variables to appserver process ([43210bc](https://github.com/ajgon/opsworks_ruby/commit/43210bc)), closes [#85](https://github.com/ajgon/opsworks_ruby/issues/85)
+* **db:** safer migration/setup command ([19bf034](https://github.com/ajgon/opsworks_ruby/commit/19bf034)), closes [#58](https://github.com/ajgon/opsworks_ruby/issues/58)
+* **overcommit:** disable fasterer warning that was causing commits to fail ([7752706](https://github.com/ajgon/opsworks_ruby/commit/7752706))
+* missing databag caused maximum_override integration failure ([1be29e1](https://github.com/ajgon/opsworks_ruby/commit/1be29e1))
+
+
+### Features
+
+* **appserver+webserver:** add apache2 + passenger support ([43c61f9](https://github.com/ajgon/opsworks_ruby/commit/43c61f9))
+* **database:** support null database driver ([29e1040](https://github.com/ajgon/opsworks_ruby/commit/29e1040)), closes [#98](https://github.com/ajgon/opsworks_ruby/issues/98)
+* **global:** support per-application deploy directory ([28cb797](https://github.com/ajgon/opsworks_ruby/commit/28cb797)), closes [#95](https://github.com/ajgon/opsworks_ruby/issues/95)
+* **logrotate:** support arbitrary logrotate customization ([fa95ab0](https://github.com/ajgon/opsworks_ruby/commit/fa95ab0)), closes [#107](https://github.com/ajgon/opsworks_ruby/issues/107)
+* **webserver:** allow extensible webserver site customization ([4efd130](https://github.com/ajgon/opsworks_ruby/commit/4efd130)), closes [#100](https://github.com/ajgon/opsworks_ruby/issues/100)
+* **webserver:** server_tokens off on Nginx ([#91](https://github.com/ajgon/opsworks_ruby/issues/91)) ([5568f6c](https://github.com/ajgon/opsworks_ruby/commit/5568f6c))
+
+
+
 <a name="1.6.0"></a>
 # [1.6.0](https://github.com/ajgon/opsworks_ruby/compare/v1.5.0...v1.6.0) (2017-06-03)
 

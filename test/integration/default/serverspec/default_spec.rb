@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 describe 'opsworks_ruby::setup' do
-  describe package('ruby2.4') do
+  describe package('ruby2.6') do
     it { should be_installed }
   end
 
@@ -16,6 +16,14 @@ describe 'opsworks_ruby::setup' do
   end
 
   describe package('nginx') do
+    it { should be_installed }
+  end
+
+  describe package('libxml2-dev') do
+    it { should be_installed }
+  end
+
+  describe package('tzdata') do
     it { should be_installed }
   end
 
@@ -80,8 +88,7 @@ describe 'opsworks_ruby::configure' do
       its(:content) { should include 'ENV[\'RAILS_ENV\'] = "production"' }
       its(:content) { should include 'ENV[\'HOME\'] = "/home/deploy"' }
       its(:content) { should include 'ENV[\'USER\'] = "deploy"' }
-      its(:content) { should include 'PID_PATH="/srv/www/dummy_project/shared/pids/puma.pid"' }
-      its(:content) { should include 'def puma_running?' }
+      its(:content) { should include 'PID_PATH="/run/lock/dummy_project/puma.pid"' }
     end
   end
 
@@ -105,7 +112,7 @@ describe 'opsworks_ruby::configure' do
 end
 
 describe 'opsworks_ruby::deploy' do
-  context 'scm' do
+  context 'source' do
     describe file('/tmp/ssh-git-wrapper.sh') do
       its(:content) { should include 'exec ssh -o UserKnownHostsFile=/dev/null' }
     end
@@ -123,7 +130,7 @@ describe 'opsworks_ruby::deploy' do
 
   context 'appserver' do
     describe command('pgrep -f puma | tr \'\n\' \' \'') do
-      its(:stdout) { should match(/(?:[0-9]+ ){4}/) }
+      its(:stdout) { should match(/(?:[0-9]+ ){2,4}/) }
     end
   end
 

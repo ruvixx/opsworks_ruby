@@ -6,13 +6,20 @@ maintainer_email 'igor@rzegocki.pl'
 license 'MIT'
 description 'Set of chef recipes for OpsWorks based Ruby projects'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version '1.6.0'
+version '1.13.0'
 chef_version '~> 12.0' if respond_to?(:chef_version)
 
-depends 'deployer'
-depends 'chef_nginx'
+depends 'apt', '< 7.0'
+depends 'nginx'
 depends 'logrotate'
 depends 'ruby-ng'
+depends 's3_file'
+depends 'sudo'
+
+# indirect dependency, but breaks against the chef_version if updated to 3.1.0
+depends 'seven_zip', '~> 2.0'
+# indirect dependency required to maintain compatibility with chef 12
+depends 'windows', '< 5.0'
 
 supports 'amazon', '>= 2017.03'
 supports 'ubuntu', '>= 16.04'

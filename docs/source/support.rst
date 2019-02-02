@@ -8,8 +8,9 @@ Supported Technologies
   - `PostgreSQL`_
   - `Sqlite3`_
 
-- SCM
+- Sources
 
+  - `Amazon S3`_
   - `Git`_
 
 - Framework
@@ -38,11 +39,13 @@ Worker
   - `delayed_job`_
   - `resque`_
   - `sidekiq`_
+  - `shoryuken`_
 
 .. _MariaDB: https://mariadb.org/
 .. _MySQL: https://www.mysql.com/
 .. _PostgreSQL: https://www.postgresql.org/
 .. _Sqlite3: https://www.sqlite.org/
+.. _Amazon S3: https://aws.amazon.com/s3/
 .. _Git: https://git-scm.com/
 .. _hanami.rb: http://hanamirb.org/
 .. _Padrino: http://padrinorb.com/
@@ -55,3 +58,4 @@ Worker
 .. _delayed_job: https://github.com/collectiveidea/delayed_job
 .. _resque: https://github.com/resque/resque
 .. _sidekiq: http://sidekiq.org/
+.. _shoryuken: https://github.com/phstc/shoryuken

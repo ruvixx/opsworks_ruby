@@ -10,23 +10,13 @@ module Drivers
         handle_packages
       end
 
-      def out
-        handle_output(raw_out)
-      end
-
-      def raw_out
-        node['defaults']['worker'].merge(
-          node['deploy'][app['shortname']]['worker'] || {}
-        ).symbolize_keys
-      end
-
       def validate_app_engine; end
 
       protected
 
-      def add_worker_monit
-        opts = { application: app['shortname'], out: out, deploy_to: deploy_dir(app), environment: environment,
-                 adapter: adapter }
+      def add_worker_monit # rubocop:disable Metrics/AbcSize
+        opts = { application: app['shortname'], name: app['name'], out: out, deploy_to: deploy_dir(app),
+                 environment: environment, adapter: adapter, app_shortname: app['shortname'] }
 
         context.template File.join(node['monit']['basedir'], "#{opts[:adapter]}_#{opts[:application]}.monitrc") do
           mode '0640'
@@ -39,6 +29,7 @@ module Drivers
 
       def restart_monit
         return if ENV['TEST_KITCHEN'] # Don't like it, but we can't run multiple processes in Docker on travis
+
         (1..process_count).each do |process_number|
           context.execute "monit restart #{adapter}_#{app['shortname']}-#{process_number}" do
             retries 3

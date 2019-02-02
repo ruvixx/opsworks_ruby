@@ -26,6 +26,7 @@ PreCommit:
       - RELEASING.md
   Foodcritic:
     enabled: true
+    flags: ['-t', '~chef13', '-t', '~chef14', '-t', '~chef15', '-t', '~chef16']
   HardTabs:
     enabled: true
     exclude:
@@ -39,6 +40,7 @@ PreCommit:
     enabled: true
     exclude:
       - CHANGELOG.md
+      - .github/ISSUE_TEMPLATE.md
   MergeConflicts:
     enabled: true
   RuboCop:

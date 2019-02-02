@@ -10,20 +10,22 @@ every_enabled_application do |application|
     databases.push(Drivers::Db::Factory.build(self, application, rds: rds))
   end
 
-  scm = Drivers::Scm::Factory.build(self, application)
+  source = Drivers::Source::Factory.build(self, application)
   framework = Drivers::Framework::Factory.build(self, application, databases: databases)
   appserver = Drivers::Appserver::Factory.build(self, application)
   worker = Drivers::Worker::Factory.build(self, application, databases: databases)
   webserver = Drivers::Webserver::Factory.build(self, application)
-  bundle_env = scm.class.adapter.to_s == 'Chef::Provider::Git' ? { 'GIT_SSH' => scm.out[:ssh_wrapper] } : {}
+  env_vars = application['environment'].merge(framework.out[:deploy_environment] || {}).merge(
+    source.class.adapter.to_s == 'Chef::Provider::Git' ? { 'GIT_SSH' => source.out[:ssh_wrapper] } : {}
+  )
 
-  fire_hook(:before_deploy, items: databases + [scm, framework, appserver, worker, webserver])
+  fire_hook(:before_deploy, items: databases + [source, framework, appserver, worker, webserver])
 
   deploy application['shortname'] do
     deploy_to deploy_dir(application)
     user node['deployer']['user'] || 'root'
     group www_group
-    environment application['environment'].merge(framework.out[:deploy_environment] || {})
+    environment env_vars
 
     if globals(:rollback_on_error, application['shortname']).nil?
       rollback_on_error node['defaults']['global']['rollback_on_error']
@@ -47,9 +49,7 @@ every_enabled_application do |application|
     symlink_before_migrate globals(:symlink_before_migrate, application['shortname'])
     symlinks(node['defaults']['global']['symlinks'].merge(globals(:symlinks, application['shortname']) || {}))
 
-    scm.out.each do |scm_key, scm_value|
-      send(scm_key, scm_value) if respond_to?(scm_key)
-    end
+    source.fetch(self)
 
     [appserver, webserver].each do |server|
       server.notifies[:deploy].each do |config|
@@ -60,22 +60,22 @@ every_enabled_application do |application|
     end
 
     migration_command(framework.out[:migration_command]) if framework.out[:migration_command]
-    migrate framework.out[:migrate]
+    migrate framework.migrate?
     before_migrate do
-      perform_bundle_install(shared_path, bundle_env)
+      perform_bundle_install(shared_path, env_vars)
 
       fire_hook(
-        :deploy_before_migrate, context: self, items: databases + [scm, framework, appserver, worker, webserver]
+        :deploy_before_migrate, context: self, items: databases + [source, framework, appserver, worker, webserver]
       )
 
       run_callback_from_file(File.join(release_path, 'deploy', 'before_migrate.rb'))
     end
 
     before_symlink do
-      perform_bundle_install(shared_path, bundle_env) unless framework.out[:migrate]
+      perform_bundle_install(shared_path, env_vars) unless framework.migrate?
 
       fire_hook(
-        :deploy_before_symlink, context: self, items: databases + [scm, framework, appserver, worker, webserver]
+        :deploy_before_symlink, context: self, items: databases + [source, framework, appserver, worker, webserver]
       )
 
       run_callback_from_file(File.join(release_path, 'deploy', 'before_symlink.rb'))
@@ -83,7 +83,7 @@ every_enabled_application do |application|
 
     before_restart do
       fire_hook(
-        :deploy_before_restart, context: self, items: databases + [scm, framework, appserver, worker, webserver]
+        :deploy_before_restart, context: self, items: databases + [source, framework, appserver, worker, webserver]
       )
 
       run_callback_from_file(File.join(release_path, 'deploy', 'before_restart.rb'))
@@ -91,7 +91,7 @@ every_enabled_application do |application|
 
     after_restart do
       fire_hook(
-        :deploy_after_restart, context: self, items: databases + [scm, framework, appserver, worker, webserver]
+        :deploy_after_restart, context: self, items: databases + [source, framework, appserver, worker, webserver]
       )
 
       run_callback_from_file(File.join(release_path, 'deploy', 'after_restart.rb'))
@@ -100,5 +100,5 @@ every_enabled_application do |application|
     timeout node['deploy']['timeout']
   end
 
-  fire_hook(:after_deploy, items: databases + [scm, framework, appserver, worker, webserver])
+  fire_hook(:after_deploy, items: databases + [source, framework, appserver, worker, webserver])
 end

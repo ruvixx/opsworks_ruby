@@ -61,8 +61,23 @@ suites:
               queues:
                 - default
                 - mailers
-  - name: unicorn_apache_hanami_resque
-    data_bags_path: "test/integration/data_bags/unicorn_apache_hanami_resque"
+  - name: default_with_shoryuken
+    data_bags_path: "test/integration/data_bags/default_with_shoryuken"
+    run_list:
+      - recipe[opsworks_ruby::setup]
+      - recipe[opsworks_ruby::deploy]
+    attributes:
+      deploy:
+        dummy_project:
+          worker:
+            adapter: "shoryuken"
+            process_count: 1
+            require_rails: true
+            config:
+              concurrency: 6
+              verbose: true
+  - name: http_unicorn_apache_hanami_resque
+    data_bags_path: "test/integration/data_bags/http_unicorn_apache_hanami_resque"
     run_list:
       - recipe[opsworks_ruby::setup]
       - recipe[opsworks_ruby::deploy]
@@ -91,8 +106,8 @@ suites:
             queues:
               - default
               - mailers
-  - name: thin_nginx_padrino_delayed_job
-    data_bags_path: "test/integration/data_bags/thin_nginx_padrino_delayed_job"
+  - name: s3_thin_nginx_padrino_delayed_job
+    data_bags_path: "test/integration/data_bags/s3_thin_nginx_padrino_delayed_job"
     run_list:
       - recipe[opsworks_ruby::setup]
       - recipe[opsworks_ruby::deploy]
@@ -124,3 +139,73 @@ suites:
             adapter: 'null'
           webserver:
             adapter: 'null'
+  - name: maximum_override
+    data_bags_path: "test/integration/data_bags/maximum_override"
+    run_list:
+      - recipe[opsworks_ruby::setup]
+      - recipe[opsworks_ruby::deploy]
+    attributes:
+      defaults:
+        global:
+          logrotate_template_owner: 'deploy'
+          logrotate_template_group: 'root'
+          logrotate_rotate: 75
+        framework:
+          logrotate_options:
+            - missingok
+            - notifempty
+            - copytruncate
+            - sharedscripts
+          logrotate_template_group: 'www-data'
+        source:
+          generated_ssh_wrapper: '/var/tmp/my-generated-ssh-wrapper.sh'
+        webserver:
+          logrotate_options:
+            - missingok
+            - notifempty
+            - copytruncate
+      deploy:
+        other_project:
+          appserver:
+            adapter: 'passenger'
+            mount_point: '/some/mount/point'
+            max_pool_size: 3
+            min_instances: 2
+          database:
+            adapter: 'null'
+          framework:
+            adapter: 'rails'
+            assets_precompilation_command: '/bin/true'
+            logrotate_name: 'dumber-app-logrotate'
+            logrotate_frequency: 'weekly'
+            logrotate_template_mode: '0750'
+          global:
+            logrotate_name: 'this-will-be-ignored'
+            logrotate_frequency: 'monthly'
+            logrotate_log_paths:
+              - /this/will/be/ignored1.log
+          webserver:
+            adapter: 'apache2'
+            logrotate_log_paths:
+              - /tmp/log1.log
+              - /tmp/log2.log
+            logrotate_options:
+              - missingok
+              - notifempty
+            logrotate_rotate: 15
+            logrotate_template_owner: 'root'
+            port: 8080
+            ssl_port: 8443
+        yet_another_project:
+          appserver:
+            adapter: 'unicorn'
+          database:
+            adapter: 'null'
+          framework:
+            adapter: 'rails'
+            assets_precompilation_command: '/bin/true'
+            logrotate_name: 'dumberer-app-logrotate'
+          webserver:
+            adapter: 'apache2'
+            port: 8081
+      'ruby-version': '2.3'

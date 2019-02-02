@@ -19,23 +19,6 @@ guide in [documentation](http://opsworks-ruby.readthedocs.io/en/latest/index.htm
 You can either install eveyrthing locally using [rvm](https://rvm.io/) and [pip](https://pypi.python.org/pypi/pip)
 or use the Docker container which includes all necessary dependencies inside it.
 
-### Unit Testing and Linting
-
-```
-docker-compose run -e SKIP="AuthorName AuthorEmail" cookbook \
-bash -c "overcommit --sign && overcommit -r && rspec"
-```
-
-### Integration Testing
-
-To run integration tests you need [Chef Development Kit](https://downloads.chef.io/chefdk).
-After installing it, invoke:
-
-```
-chef exec bundle install -j 4 --path vendor
-sudo chef exec bundle exec rake integration:docker
-```
-
 ### Build documentation
 
 ```
@@ -53,11 +36,14 @@ Author: [Igor Rzegocki](https://www.rzegocki.pl/) ([@ajgon](https://github.com/a
 
 ### Contributors
 
+* Nick Marden ([@nickmarden](https://github.com/nickmarden))
 * Phong Si ([@phongsi](https://github.com/phongsi))
-* Nathan Flood ([@npflood](https://github.com/npflood))
-* Marcos Beirigo ([@marcosbeirigo](https://github.com/marcosbeirigo))
+* Kevin Olbrich ([@olbrich](https://github.com/olbrich))
 * Kevin Pheasey ([@kpheasey](https://github.com/kpheasey))
+* Nathan Flood ([@npflood](https://github.com/npflood))
 * Teruo Adachi ([@interu](https://github.com/interu))
+* Marcos Beirigo ([@marcosbeirigo](https://github.com/marcosbeirigo))
+* John Calvin Young ([@johncalvinyoung](https://github.com/johncalvinyoung))
 
 ## License
 

@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 describe 'opsworks_ruby::setup' do
-  describe package('ruby2.4') do
+  describe package('ruby2.6') do
     it { should be_installed }
   end
 
@@ -41,7 +41,7 @@ describe 'opsworks_ruby::configure' do
 end
 
 describe 'opsworks_ruby::deploy' do
-  context 'scm' do
+  context 'source' do
     describe file('/tmp/ssh-git-wrapper.sh') do
       its(:content) { should include 'exec ssh -o UserKnownHostsFile=/dev/null' }
     end
