@@ -102,7 +102,7 @@ Global parameters apply to the whole application, and can be used by any section
 - ``app['global']['create_dirs_before_symlink']``
 
   -  **Type:** array
-  -  **Default:** ``["tmp", "public", "config", "../../shared/cache", "../../shared/assets"]``
+  -  **Default:** ``["tmp", "public", "config", "../../shared/cache"]``
   -  **Important Notice:** Any values for this parameter will be *appended* to the defaults
   -  List of directories to be created before symlinking. Paths are relative to ``release_path``.
      For example ``tmp`` becomes ``/srv/www/app_name/current/tmp``.
